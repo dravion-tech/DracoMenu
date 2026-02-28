@@ -11,9 +11,9 @@ const PrintQRs = () => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Use local IP for mobile accessibility during development
-  const FRONTEND_URL = "http://192.168.29.47:5173";
-  const STAFF_BASE_URL = FRONTEND_URL; // Specifically requested IP for staff usage
+  // Use current origin for deployment readiness
+  const FRONTEND_URL = window.location.origin;
+  const STAFF_BASE_URL = FRONTEND_URL;
 
   useEffect(() => {
     const fetchProfile = async () => {

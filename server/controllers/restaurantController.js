@@ -48,7 +48,10 @@ exports.uploadLogo = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const backendUrl = process.env.BACKEND_URL || "http://localhost:5000";
+    const host = req.get("host");
+    const protocol = req.protocol;
+    const backendUrl = process.env.BACKEND_URL || `${protocol}://${host}`;
+
     const restaurant = await Restaurant.findOneAndUpdate(
       { owner: req.user.id },
       { logo: `${backendUrl}/uploads/${req.file.filename}` },
