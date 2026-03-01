@@ -13,19 +13,22 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-].filter(Boolean);
+  "https://dracomenu.netlify.app",
+]
+  .filter(Boolean)
+  .map((url) => url.replace(/\/$/, ""));
 
 app.use(
   cors({
     origin: function (origin, callback) {
-      // allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        const msg =
-          "The CORS policy for this site does not allow access from the specified Origin.";
-        return callback(new Error(msg), false);
+      const normalizedOrigin = origin.replace(/\/$/, "");
+      if (allowedOrigins.includes(normalizedOrigin)) {
+        return callback(null, true);
+      } else {
+        console.log("CORS Blocked for origin:", origin);
+        return callback(new Error("Not allowed by CORS"), false);
       }
-      return callback(null, true);
     },
     credentials: true,
   }),
@@ -41,6 +44,15 @@ app.use("/api/menu", require("./routes/menu"));
 app.use("/api/orders", require("./routes/orders"));
 app.use("/api/public", require("./routes/public"));
 app.use("/api/super-admin", require("./routes/superAdmin"));
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("GLOBAL ERROR:", err.stack);
+  res.status(500).json({
+    message: "Internal Server Error",
+    error: process.env.NODE_ENV === "development" ? err.message : undefined,
+  });
+});
 
 // Database Connection
 const dbUri = process.env.MONGODB_URI || "mongodb://localhost:27017/qr-menu";
