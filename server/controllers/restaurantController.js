@@ -2,6 +2,7 @@ const Restaurant = require("../models/Restaurant");
 const Order = require("../models/Order");
 const MenuItem = require("../models/MenuItem");
 const QRCode = require("qrcode");
+const cloudinary = require("../config/cloudinary");
 
 exports.getProfile = async (req, res) => {
   try {
@@ -48,18 +49,28 @@ exports.uploadLogo = async (req, res) => {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const host = req.get("host");
-    const protocol = req.protocol;
-    const backendUrl = process.env.BACKEND_URL || `${protocol}://${host}`;
+    const uploadPromise = new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: "restaurant_logos" },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        },
+      );
+      uploadStream.end(req.file.buffer);
+    });
+
+    const result = await uploadPromise;
 
     const restaurant = await Restaurant.findOneAndUpdate(
       { owner: req.user.id },
-      { logo: `${backendUrl}/uploads/${req.file.filename}` },
+      { logo: result.secure_url },
       { returnDocument: "after" },
     );
 
     res.json(restaurant);
   } catch (err) {
+    console.error("Logo Upload Error:", err);
     res.status(500).json({ message: err.message });
   }
 };

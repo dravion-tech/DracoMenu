@@ -1,6 +1,7 @@
 const Category = require("../models/Category");
 const MenuItem = require("../models/MenuItem");
 const Restaurant = require("../models/Restaurant");
+const cloudinary = require("../config/cloudinary");
 
 // Category Controllers
 exports.getCategories = async (req, res) => {
@@ -70,7 +71,20 @@ exports.createMenuItem = async (req, res) => {
   try {
     const itemData = { ...req.body };
     if (req.file) {
-      itemData.image = `/uploads/${req.file.filename}`;
+      // Upload to Cloudinary using stream
+      const uploadPromise = new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: "menu_items" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          },
+        );
+        uploadStream.end(req.file.buffer);
+      });
+
+      const result = await uploadPromise;
+      itemData.image = result.secure_url;
     }
     const item = new MenuItem({
       ...itemData,
@@ -79,6 +93,7 @@ exports.createMenuItem = async (req, res) => {
     await item.save();
     res.status(201).json(item);
   } catch (err) {
+    console.error("Upload Error:", err);
     res.status(500).json({ message: err.message });
   }
 };
@@ -87,7 +102,19 @@ exports.updateMenuItem = async (req, res) => {
   try {
     const itemData = { ...req.body };
     if (req.file) {
-      itemData.image = `/uploads/${req.file.filename}`;
+      const uploadPromise = new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          { folder: "menu_items" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          },
+        );
+        uploadStream.end(req.file.buffer);
+      });
+
+      const result = await uploadPromise;
+      itemData.image = result.secure_url;
     }
     const item = await MenuItem.findOneAndUpdate(
       { _id: req.params.id, restaurant: req.user.restaurantId },
@@ -96,6 +123,7 @@ exports.updateMenuItem = async (req, res) => {
     );
     res.json(item);
   } catch (err) {
+    console.error("Update Upload Error:", err);
     res.status(500).json({ message: err.message });
   }
 };
