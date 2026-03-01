@@ -34,6 +34,7 @@ app.use(express.json());
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Routes
+app.get("/", (req, res) => res.send("QR Menu Backend is Running 🚀"));
 app.use("/api/auth", require("./routes/auth"));
 app.use("/api/restaurant", require("./routes/restaurant"));
 app.use("/api/menu", require("./routes/menu"));
